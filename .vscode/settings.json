@@ -1,0 +1,5 @@
+{
+    "editor.fontSize": 18,
+    "editor.inlayHints.enabled": "offUnlessPressed",
+    "rust-analyzer.inlayHints.typeHints.enable": true
+}
