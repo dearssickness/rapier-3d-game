@@ -84,7 +84,7 @@ fn move_cube(
         }
     }
 
-    else if keyboard.just_released(KeyCode::Right) {
+    if keyboard.just_released(KeyCode::Right) {
         for mut ext_force in ext_forces.iter_mut() {
             ext_force.force = Vec3::new(0.0, 0.0, 0.0);
         }
@@ -96,7 +96,7 @@ fn move_cube(
         }
     }
 
-    else if keyboard.just_released(KeyCode::Left) {
+    if keyboard.just_released(KeyCode::Left) {
         for mut ext_force in ext_forces.iter_mut() {
             ext_force.force = Vec3::new(0.0, 0.0, 0.0);
         }
@@ -120,11 +120,60 @@ fn move_cube(
         }
     }
 
-    else if keyboard.just_released(KeyCode::Down) {
+    if keyboard.just_released(KeyCode::Down) {
         for mut ext_force in ext_forces.iter_mut() {
             ext_force.force = Vec3::new(0.0, 0.0, 0.0);
         }
     }   
+
+     if keyboard.pressed(KeyCode::Up) & keyboard.pressed(KeyCode::Right) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(2.0, 0.0, -2.0);
+        }
+    }
+
+    if keyboard.just_released(KeyCode::Up) & keyboard.pressed(KeyCode::Right) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
+        }
+    }
+
+     if keyboard.pressed(KeyCode::Up) & keyboard.pressed(KeyCode::Left) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(-2.0, 0.0, -2.0);
+        }
+    }
+
+    if keyboard.just_released(KeyCode::Up) & keyboard.pressed(KeyCode::Left) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
+        }
+    }
+
+    if keyboard.pressed(KeyCode::Down) & keyboard.pressed(KeyCode::Left) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(-2.0, 0.0, 2.0);
+        }
+    }
+
+    if keyboard.just_released(KeyCode::Down) & keyboard.pressed(KeyCode::Left) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
+        }
+    }
+    
+   if keyboard.pressed(KeyCode::Down) & keyboard.pressed(KeyCode::Right) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(2.0, 0.0, 2.0);
+        }
+    }
+
+    if keyboard.just_released(KeyCode::Down) & keyboard.pressed(KeyCode::Right) {
+        for mut ext_force in ext_forces.iter_mut() {
+            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
+        }
+    } 
+
 }
 
 fn camera_controls(
