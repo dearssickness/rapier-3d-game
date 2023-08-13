@@ -17,6 +17,9 @@ fn main() {
         .run();
 }
 
+#[derive(Component)]
+pub struct Player;
+
 fn setup_graphics(mut commands: Commands) {
     // Add a camera so we can see the debug-render.
     commands.spawn(Camera3dBundle {
@@ -32,8 +35,27 @@ fn setup_physics(
 ) {
     /* Create the ground. */
     commands
-        .spawn(Collider::cuboid(100.0, 0.1, 100.0))
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Plane {size: 100.0, subdivisions: 0})),
+            material: materials.add(Color::hex("006B6E").unwrap().into()),
+            ..default()
+        })
+        .insert(Collider::cuboid(100.0, 0.1, 100.0))
         .insert(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
+
+    // Create light    
+    commands
+        .spawn(PointLightBundle {
+            point_light: PointLight {
+                intensity: 15000.0,
+                range: 150.0,
+                shadows_enabled: false,
+                ..default()
+            },
+            transform: Transform::from_xyz(4.0, 15.0, 4.0),
+            ..default()
+        })
+        .insert(Name::new("Light"));
 
     /* Create the bouncing ball. */
     commands
@@ -45,8 +67,14 @@ fn setup_physics(
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(0.5))
         .insert(Restitution::coefficient(0.7))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)));
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)))
+        .insert(ExternalForce {
+            force: Vec3::new(0.0, 0.0, 0.0),
+            torque: Vec3::new(0.0, 0.0, 0.0),
+        })
+        .insert(Name::new("Ball"));
 
+    /* Meant to be the player */
     commands
         .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Box {min_x: -0.5, max_x:0.5, min_y:-0.5, max_y: 0.5, min_z:-0.5, max_z:0.5})),
@@ -64,19 +92,21 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
-        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 4.0, 0.0)));
+        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 4.0, 0.0)))
+        .insert(Player)
+        .insert(Name::new("Player"));
 
 }
 
-fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
-    for transform in positions.iter() {
-        println!("Ball altitude: {}", transform.translation.y);
-    }
-}
+//fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
+//    for transform in positions.iter() {
+//        println!("Ball altitude: {}", transform.translation.y);
+//    }
+//}
 
 fn move_cube(
     keyboard: Res<Input<KeyCode>>,
-    mut ext_forces: Query<&mut ExternalForce>
+    mut ext_forces: Query<&mut ExternalForce, Without<Player>>
 ){
     if keyboard.pressed(KeyCode::Right) {
         for mut ext_force in ext_forces.iter_mut() {
