@@ -14,6 +14,7 @@ fn main() {
 //        .add_system(print_ball_altitude)
         .add_systems(Update, camera_controls)
         .add_systems(Update, move_cube)
+        .add_systems(Update, shoot)
         .run();
 }
 
@@ -72,7 +73,7 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
-        .insert(Name::new("Ball"));
+        .insert(Name::new("Bullet"));
 
     /* Meant to be the player */
     commands
@@ -98,15 +99,41 @@ fn setup_physics(
 
 }
 
-//fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
-//    for transform in positions.iter() {
-//        println!("Ball altitude: {}", transform.translation.y);
-//    }
-//}
 
-fn move_cube(
+pub fn shoot(
     keyboard: Res<Input<KeyCode>>,
-    mut ext_forces: Query<&mut ExternalForce, Without<Player>>
+    positions: Query<&Transform, With<Player>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>
+){
+    for position in positions.iter() {
+        if keyboard.just_pressed(KeyCode::Space) {
+            commands
+                .spawn(PbrBundle {
+                    mesh: meshes.add(Mesh::from(shape::Circle {radius: 0.5, vertices: 100})),
+                    material: materials.add(Color::rgb(10.0, 0.5, 0.5).into()),
+                    ..default()
+                })
+                .insert(RigidBody::Dynamic)
+                .insert(Collider::ball(0.5))
+                .insert(Restitution::coefficient(0.7))
+                .insert(TransformBundle::from(Transform::from_xyz(
+                    position.translation.x + 0.5, position.translation.y, position.translation.z)))
+                .insert(ExternalForce {
+                    force: Vec3::new(5.0, 0.0, 0.0),
+                    torque: Vec3::new(0.0, 0.0, 0.0),
+                })
+                .insert(Name::new("Bullet"));
+    }
+    }
+}
+
+
+
+pub fn move_cube(
+    keyboard: Res<Input<KeyCode>>,
+    mut ext_forces: Query<&mut ExternalForce, With<Player>>
 ){
     if keyboard.pressed(KeyCode::Right) {
         for mut ext_force in ext_forces.iter_mut() {
@@ -243,3 +270,9 @@ fn camera_controls(
         camera.rotate_axis(Vec3::Y, -rotate_speed * time.delta_seconds())
     }
 }
+
+//fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
+//    for transform in positions.iter() {
+//        println!("Ball altitude: {}", transform.translation.y);
+//    }
+//}
