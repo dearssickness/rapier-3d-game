@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera};
 use bevy_rapier3d::prelude::*;
 use bevy::{pbr::NotShadowCaster, prelude::*, utils::FloatOrd};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -11,22 +11,52 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, setup_physics)
-//        .add_system(print_ball_altitude)
+        .add_systems(Update, print_ball_altitude)
         .add_systems(Update, camera_controls)
         .add_systems(Update, move_cube)
         .add_systems(Update, shoot)
+        .add_systems(Update, change_cube_direction)
+        .add_systems(Update, change_camera)
         .run();
 }
 
 #[derive(Component)]
 pub struct Player;
 
+#[derive(Component)]
+pub struct Bullet;
+
+#[derive(Component)]
+pub struct Camera;
+
+#[derive(Component)]
+pub struct Ground;
+
+#[derive(Component)]
+pub struct Light;
+
 fn setup_graphics(mut commands: Commands) {
     // Add a camera so we can see the debug-render.
     commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(-3.0, 3.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
-    });
+    })
+    .insert(Camera)
+    .insert(Name::new("Camera"));
+}
+
+fn change_camera(
+    keyboard: Res<Input<KeyCode>>,
+    player_transforms: Query<&Transform, With<Player>>,
+    mut camera_transforms: Query<&mut Transform, (Without<Ground>, Without<Player>, Without<Light>, Without<Bullet>)>
+    
+){
+    let player_transform = player_transforms.single();
+    let mut camera_transform = camera_transforms.single_mut();
+
+    if keyboard.pressed(KeyCode::C){
+        camera_transform.rotation =  player_transform.rotation;
+    }
 }
 
 fn setup_physics(
@@ -42,6 +72,7 @@ fn setup_physics(
             ..default()
         })
         .insert(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert(Ground)
         .insert(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
 
     // Create light    
@@ -56,6 +87,7 @@ fn setup_physics(
             transform: Transform::from_xyz(4.0, 15.0, 4.0),
             ..default()
         })
+        .insert(Light)
         .insert(Name::new("Light"));
 
     /* Create the bouncing ball. */
@@ -73,6 +105,7 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
+        .insert(Bullet)
         .insert(Name::new("Bullet"));
 
     /* Meant to be the player */
@@ -95,6 +128,12 @@ fn setup_physics(
         })
         .insert(TransformBundle::from(Transform::from_xyz(-3.0, 4.0, 0.0)))
         .insert(Player)
+
+        .insert(Velocity {
+            linvel: Vec3::new(0.0, 0.0, 0.0),
+            angvel: Vec3::new(0.0, 0.0, 0.0),
+        })
+
         .insert(Name::new("Player"));
 
 }
@@ -112,24 +151,36 @@ pub fn shoot(
             commands
                 .spawn(PbrBundle {
                     mesh: meshes.add(Mesh::from(shape::Circle {radius: 0.5, vertices: 100})),
-                    material: materials.add(Color::rgb(10.0, 0.5, 0.5).into()),
+                    material: materials.add(Color::hex("ec1c24").unwrap().into()),
                     ..default()
                 })
                 .insert(RigidBody::Dynamic)
                 .insert(Collider::ball(0.5))
                 .insert(Restitution::coefficient(0.7))
                 .insert(TransformBundle::from(Transform::from_xyz(
-                    position.translation.x + 0.5, position.translation.y, position.translation.z)))
+                    position.translation.x + 1.0, position.translation.y + 1.0, position.translation.z)))
                 .insert(ExternalForce {
-                    force: Vec3::new(5.0, 0.0, 0.0),
+                    force: Vec3::new(10.0, 0.0, 0.0),
                     torque: Vec3::new(0.0, 0.0, 0.0),
                 })
+                .insert(GravityScale(0.0))
                 .insert(Name::new("Bullet"));
     }
     }
 }
 
-
+pub fn change_cube_direction(
+    keyboard: Res<Input<KeyCode>>,
+    mut velocities: Query<&mut Velocity, With<Player>>    
+){
+    
+    if keyboard.pressed(KeyCode::R) {
+        for mut vel in velocities.iter_mut() {
+            vel.linvel = Vec3::new(0.0, 0.0, 0.0);
+            vel.angvel = Vec3::new(0.0, 1.0, 0.0);
+        }
+    }
+}
 
 pub fn move_cube(
     keyboard: Res<Input<KeyCode>>,
@@ -271,8 +322,8 @@ fn camera_controls(
     }
 }
 
-//fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
-//    for transform in positions.iter() {
-//        println!("Ball altitude: {}", transform.translation.y);
-//    }
-//}
+fn print_ball_altitude(rotations: Query<&Transform, With<Player>>) {
+    for rotation in rotations.iter() {
+        println!("Ball altitude: {}", rotation.rotation);
+    }
+}
