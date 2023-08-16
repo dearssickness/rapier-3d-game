@@ -46,7 +46,7 @@ fn setup_graphics(mut commands: Commands) {
 }
 
 fn change_camera(
-    keyboard: Res<Input<KeyCode>>,
+//    keyboard: Res<Input<KeyCode>>,
     player_transforms: Query<&Transform, With<Player>>,
     mut camera_transforms: Query<&mut Transform, (Without<Ground>, Without<Player>, Without<Light>, Without<Bullet>)>
     
@@ -54,9 +54,8 @@ fn change_camera(
     let player_transform = player_transforms.single();
     let mut camera_transform = camera_transforms.single_mut();
 
-    if keyboard.pressed(KeyCode::C){
-        camera_transform.rotation =  player_transform.rotation;
-    }
+    camera_transform.rotation =  player_transform.rotation;
+    camera_transform.translation = player_transform.translation;
 }
 
 fn setup_physics(
@@ -184,12 +183,11 @@ pub fn change_cube_direction(
 
 pub fn move_cube(
     keyboard: Res<Input<KeyCode>>,
-    mut ext_forces: Query<&mut ExternalForce, With<Player>>
+    mut ext_forces: Query<&mut ExternalForce, With<Player>>,
 ){
+    let mut ext_force = ext_forces.single_mut();
     if keyboard.pressed(KeyCode::Right) {
-        for mut ext_force in ext_forces.iter_mut() {
-            ext_force.force = Vec3::new(2.0, 0.0, 0.0);
-        }
+        ext_force.force = Vec3::new(2.0, 0.0, 0.0);
     }
 
     if keyboard.just_released(KeyCode::Right) {
