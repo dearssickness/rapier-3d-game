@@ -165,7 +165,7 @@ pub fn shoot(
 fn player_movement(
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut velocities: Query<&mut Velocity, With<Player>>,
+    mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
     cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
 ) {
 
@@ -194,13 +194,16 @@ fn player_movement(
    }
 
    direction.y = 0.0;
+
    let movement = direction.normalize_or_zero();
 
-   let mut vel = velocities.single_mut();
+   let (mut player_transform,mut vel) = velocities.single_mut();
 
    vel.linvel = movement;
    
-   vel.angvel = Vec3::new(0.0, direction.y, 0.0);
+//   vel.angvel = Vec3::new(0.0, direction.y, 0.0);
+   
+   player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
     
 }
 
