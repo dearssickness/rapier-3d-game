@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera, math::vec3};
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_third_person_camera::*;
@@ -30,6 +30,9 @@ pub struct Bullet;
 
 #[derive(Component)]
 pub struct Camera;
+
+#[derive(Component)]
+pub struct Ball;
 
 #[derive(Component)]
 pub struct Ground;
@@ -101,8 +104,8 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
-        .insert(Bullet)
-        .insert(Name::new("Bullet"));
+        .insert(Ball)
+        .insert(Name::new("Ball"));
 
     /* Meant to be the player */
     commands
@@ -126,6 +129,10 @@ fn setup_physics(
         .insert(TransformBundle::from(Transform::from_xyz(-3.0, 0.1, 0.0)))
         .insert(Player)
         .insert(Speed(2.5))
+        .insert(ExternalImpulse {
+            impulse: Vec3::new(0.0, 0.0, 0.0),
+            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
+        })
         .insert(Velocity {
             linvel: Vec3::new(0.0, 0.0, 0.0),
             angvel: Vec3::new(0.0, 0.0, 0.0),
@@ -160,6 +167,7 @@ pub fn shoot(
                     torque: Vec3::new(0.0, 0.0, 0.0),
                 })
                 .insert(GravityScale(0.0))
+                .insert(Bullet)
                 .insert(Name::new("Bullet"));
     }
     }
@@ -168,11 +176,12 @@ pub fn shoot(
 fn player_movement(
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
+    mouse: Res<Input<MouseButton>>,
     mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
-    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
+    mut cam_q: Query<&mut Transform, (With<Camera>, Without<Player>)>,
 ) {
 
-    let cam = cam_q.single();
+    let mut cam = cam_q.single_mut();
     
     let mut direction = Vec3::ZERO;
     
@@ -198,16 +207,24 @@ fn player_movement(
     
     direction.y = 0.0;
     
-    let movement = direction.normalize_or_zero();
+    let movement = direction;//.normalize_or_zero();
     
-    let (mut player_transform,mut vel) = velocities.single_mut();
-     
-    println!("player tansform translation y is {}", player_transform.translation.y);
-    
-    if player_transform.translation.y <= -1.3{
-        vel.linvel = movement;
+    let (mut player_transform, mut vel) = velocities.single_mut();
+
+    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= -1.3{
+        vel.linvel.y = 3.5;
     }
-    
+
+    if player_transform.translation.y <= -1.3 {
+        vel.linvel.x = movement.x * 2.0;
+        vel.linvel.z = movement.z * 2.0;
+
+    } else {
+        vel.linvel.x = movement.x * 6.0;
+        vel.linvel.z = movement.z * 6.0;
+
+    }
+
     player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
     
 }
