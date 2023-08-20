@@ -43,7 +43,10 @@ struct Speed(f32);
 
 fn setup_graphics(mut commands: Commands) {
     commands.spawn((
-        ThirdPersonCamera::default(),
+        ThirdPersonCamera {
+           zoom: Zoom::new(5.0, 10.0),
+        ..default()
+        },
         Camera3dBundle::default()
     ))
     .insert(Camera)
@@ -120,7 +123,7 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
-        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 0.5, 0.0)))
+        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 0.1, 0.0)))
         .insert(Player)
         .insert(Speed(2.5))
         .insert(Velocity {
@@ -169,41 +172,43 @@ fn player_movement(
     cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
 ) {
 
-   let cam = cam_q.single();
-
-   let mut direction = Vec3::ZERO;
-
-   // forward
-   if keys.pressed(KeyCode::W) {
-       direction += cam.forward();
-   }
-
-   // back
-   if keys.pressed(KeyCode::S) {
-       direction += cam.back();
-   }
-
-   // left
-   if keys.pressed(KeyCode::A) {
-       direction += cam.left();
-   }
-
-   // right
-   if keys.pressed(KeyCode::D) {
-       direction += cam.right();
-   }
-
-   direction.y = 0.0;
-
-   let movement = direction.normalize_or_zero();
-
-   let (mut player_transform,mut vel) = velocities.single_mut();
-
-   vel.linvel = movement;
-   
-//   vel.angvel = Vec3::new(0.0, direction.y, 0.0);
-   
-   player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
+    let cam = cam_q.single();
+    
+    let mut direction = Vec3::ZERO;
+    
+    // forward
+    if keys.pressed(KeyCode::W) {
+        direction += cam.forward();
+    }
+    
+    // back
+    if keys.pressed(KeyCode::S) {
+        direction += cam.back();
+    }
+    
+    // left
+    if keys.pressed(KeyCode::A) {
+        direction += cam.left();
+    }
+    
+    // right
+    if keys.pressed(KeyCode::D) {
+        direction += cam.right();
+    }
+    
+    direction.y = 0.0;
+    
+    let movement = direction.normalize_or_zero();
+    
+    let (mut player_transform,mut vel) = velocities.single_mut();
+     
+    println!("player tansform translation y is {}", player_transform.translation.y);
+    
+    if player_transform.translation.y <= -1.3{
+        vel.linvel = movement;
+    }
+    
+    player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
     
 }
 
