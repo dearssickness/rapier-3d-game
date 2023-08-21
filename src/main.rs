@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::render::mesh::shape::*;
 use bevy_rapier3d::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_third_person_camera::*;
@@ -13,12 +14,7 @@ fn main() {
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, setup_physics)
         .add_systems(Update, player_movement)
-//        .add_systems(Update, print_ball_altitude)
-//        .add_systems(Update, camera_controls)
-//        .add_systems(Update, move_cube)
         .add_systems(Update, shoot)
-//        .add_systems(Update, change_cube_direction)
-//        .add_systems(Update, change_camera)
         .run();
 }
 
@@ -92,7 +88,8 @@ fn setup_physics(
     /* Create the bouncing ball. */
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Circle {radius: 0.5, vertices: 100})),
+            mesh: meshes.add(Mesh::from(shape::Capsule {
+            radius: 0.5, rings: 0, depth: 0.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
             material: materials.add(Color::rgb(1.3, 0.5, 1.3).into()),
             ..default()
         })
@@ -110,13 +107,14 @@ fn setup_physics(
     /* Meant to be the player */
     commands
         .spawn((PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Box {min_x: -0.5, max_x:0.5, min_y:-0.5, max_y: 0.5, min_z:-0.5, max_z:0.5})),
+            mesh: meshes.add(Mesh::from(shape::Capsule {
+            radius: 0.5, rings: 0, depth: 1.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
             material: materials.add(Color::rgb(1.3, 0.5, 1.3).into()),
             ..default()
         },
         ThirdPersonCameraTarget))
         .insert(RigidBody::Dynamic)
-        .insert(Collider::cuboid (0.5, 0.5, 0.5))
+        .insert(Collider::capsule_y (0.5, 0.5))
         .insert(Restitution::coefficient(0.7))
         .insert(Friction {
             coefficient: 0.1,
@@ -126,7 +124,7 @@ fn setup_physics(
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
-        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 0.1, 0.0)))
+        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 1.0, 0.0)))
         .insert(Player)
         .insert(Speed(2.5))
         .insert(ExternalImpulse {
@@ -137,7 +135,6 @@ fn setup_physics(
             linvel: Vec3::new(0.0, 0.0, 0.0),
             angvel: Vec3::new(0.0, 0.0, 0.0),
         })
-
         .insert(Name::new("Player"));
 
 }
@@ -153,7 +150,8 @@ pub fn shoot(
         if keyboard.just_pressed(KeyCode::H) {
             commands
                 .spawn(PbrBundle {
-                    mesh: meshes.add(Mesh::from(shape::Circle {radius: 0.5, vertices: 100})),
+                    mesh: meshes.add(Mesh::from(shape::Capsule {
+                    radius: 0.5, rings: 0, depth: 0.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
                     material: materials.add(Color::hex("ec1c24").unwrap().into()),
                     ..default()
                 })
@@ -161,27 +159,29 @@ pub fn shoot(
                 .insert(Collider::ball(0.5))
                 .insert(Restitution::coefficient(0.7))
                 .insert(TransformBundle::from(Transform::from_xyz(
-                    position.translation.x + 1.0, position.translation.y + 1.0, position.translation.z)))
-                .insert(ExternalForce {
-                    force: Vec3::new(10.0, 0.0, 0.0),
-                    torque: Vec3::new(0.0, 0.0, 0.0),
+                   position.translation.x + 1.0 , position.translation.y, position.translation.z
+                )))
+                            
+                .insert(Velocity {
+                    linvel: Vec3::new(10.0, 0.0, 0.0),
+                    angvel: Vec3::new(0.0, 0.0, 0.0),
                 })
                 .insert(GravityScale(0.0))
                 .insert(Bullet)
                 .insert(Name::new("Bullet"));
-    }
+        }
     }
 }
 
 fn player_movement(
-    time: Res<Time>,
+//    time: Res<Time>,
     keys: Res<Input<KeyCode>>,
     mouse: Res<Input<MouseButton>>,
     mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
-    mut cam_q: Query<&mut Transform, (With<Camera>, Without<Player>)>,
+    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
 ) {
 
-    let mut cam = cam_q.single_mut();
+    let cam = cam_q.single();
     
     let mut direction = Vec3::ZERO;
     
@@ -211,11 +211,13 @@ fn player_movement(
     
     let (mut player_transform, mut vel) = velocities.single_mut();
 
-    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= -1.3{
+    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= -0.9{
         vel.linvel.y = 3.5;
     }
 
-    if player_transform.translation.y <= -1.3 {
+   println!("player translation y is {}", player_transform.translation.y);
+
+    if player_transform.translation.y <= -0.9 {
         vel.linvel.x = movement.x * 2.0;
         vel.linvel.z = movement.z * 2.0;
 
@@ -284,106 +286,6 @@ fn player_movement(
 //    }
 //}
 //
-//pub fn move_cube(
-//    keyboard: Res<Input<KeyCode>>,
-//    mut ext_forces: Query<&mut ExternalForce, With<Player>>,
-//){
-//    let mut ext_force = ext_forces.single_mut();
-//    if keyboard.pressed(KeyCode::Right) {
-//        ext_force.force = Vec3::new(2.0, 0.0, 0.0);
-//    }
-//
-//    if keyboard.just_released(KeyCode::Right) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//
-//    if keyboard.pressed(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(-2.0, 0.0, 0.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//    
-//    if keyboard.pressed(KeyCode::Up) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, -2.0);
-//        }
-//    }
-//
-//    else if keyboard.just_released(KeyCode::Up) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//
-//     if keyboard.pressed(KeyCode::Down) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 2.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Down) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }   
-//
-//     if keyboard.pressed(KeyCode::Up) & keyboard.pressed(KeyCode::Right) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(2.0, 0.0, -2.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Up) & keyboard.pressed(KeyCode::Right) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//
-//     if keyboard.pressed(KeyCode::Up) & keyboard.pressed(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(-2.0, 0.0, -2.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Up) & keyboard.pressed(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//
-//    if keyboard.pressed(KeyCode::Down) & keyboard.pressed(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(-2.0, 0.0, 2.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Down) & keyboard.pressed(KeyCode::Left) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    }
-//    
-//   if keyboard.pressed(KeyCode::Down) & keyboard.pressed(KeyCode::Right) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(2.0, 0.0, 2.0);
-//        }
-//    }
-//
-//    if keyboard.just_released(KeyCode::Down) & keyboard.pressed(KeyCode::Right) {
-//        for mut ext_force in ext_forces.iter_mut() {
-//            ext_force.force = Vec3::new(0.0, 0.0, 0.0);
-//        }
-//    } 
-//
-//}
 
 //fn camera_controls(
 //    keyboard: Res<Input<KeyCode>>,
