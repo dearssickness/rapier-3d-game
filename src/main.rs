@@ -1,5 +1,7 @@
 use bevy::prelude::*;
+use bevy::render::camera;
 use bevy::render::mesh::shape::*;
+use bevy_rapier3d::na::Translation;
 use bevy_rapier3d::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_third_person_camera::*;
@@ -140,46 +142,63 @@ fn setup_physics(
 }
 
 pub fn shoot(
-    keyboard: Res<Input<KeyCode>>,
+    keys: Res<Input<KeyCode>>,
     positions: Query<&Transform, With<Player>>,
+    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mouse: Res<Input<MouseButton>>
 ){
-    for position in positions.iter() {
-        if keyboard.just_pressed(KeyCode::H) {
-            commands
-                .spawn(PbrBundle {
-                    mesh: meshes.add(Mesh::from(shape::Capsule {
-                    radius: 0.5, rings: 0, depth: 0.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
-                    material: materials.add(Color::hex("ec1c24").unwrap().into()),
-                    ..default()
-                })
-                .insert(RigidBody::Dynamic)
-                .insert(Collider::ball(0.5))
-                .insert(Restitution::coefficient(0.7))
-                .insert(TransformBundle::from(Transform::from_xyz(
-                   position.translation.x + 1.0 , position.translation.y, position.translation.z
-                )))
-                            
-                .insert(Velocity {
-                    linvel: Vec3::new(10.0, 0.0, 0.0),
-                    angvel: Vec3::new(0.0, 0.0, 0.0),
-                })
-                .insert(GravityScale(0.0))
-                .insert(Bullet)
-                .insert(Name::new("Bullet"));
-        }
+    
+    let cam = cam_q.single();
+
+    let position = positions.single();
+//    for position in positions.iter() {
+
+    let direction = camera_direction(&cam_q, keys);
+    
+//    println!("direction is {}", direction);
+
+    if mouse.just_pressed(MouseButton::Left) {
+
+
+//    if keyboard.just_pressed(KeyCode::H) {
+        commands
+            .spawn(PbrBundle {
+                mesh: meshes.add(Mesh::from(shape::Capsule {
+                radius: 0.5, rings: 0, depth: 0.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
+                material: materials.add(Color::hex("ec1c24").unwrap().into()),
+                ..default()
+            })
+            .insert(RigidBody::Dynamic)
+            .insert(Collider::ball(0.5))
+            .insert(Restitution::coefficient(0.7))
+            .insert(TransformBundle::from(Transform::from_xyz(position.translation.x + 1.0,
+             position.translation.y + 1.0, position.translation.z + 1.0)))
+//            .insert(TransformBundle::from(Transform::from_rotation(cam.rotation)))//.with_translation(position.translation)))
+            .insert(Velocity {
+//                vel.linvel.x = direction.x * 2.0;
+//                vel.linvel.z = direction.z * 2.0;
+//                linvel: Vec3::new(cam.rotation.x * 10.0 , 0.0 , cam.rotation.z * 10.0),
+                linvel: cam.rotation.mul_vec3(Vec3::new(
+                    0.0,
+                    0.0,
+                    -4.0
+                )),
+                angvel: Vec3::new(0.0, 0.0, 0.0),
+            })
+            .insert(GravityScale(0.0))
+            .insert(Bullet)
+            .insert(Name::new("Bullet"));
     }
 }
 
-fn player_movement(
+pub fn camera_direction(
 //    time: Res<Time>,
+    cam_q: &Query<&Transform, (With<Camera>, Without<Player>)>,
     keys: Res<Input<KeyCode>>,
-    mouse: Res<Input<MouseButton>>,
-    mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
-    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
-) {
+) -> Vec3 {
 
     let cam = cam_q.single();
     
@@ -207,15 +226,29 @@ fn player_movement(
     
     direction.y = 0.0;
     
-    let movement = direction;//.normalize_or_zero();
+    direction
+}
+
+    fn player_movement(
+        keys: Res<Input<KeyCode>>,
+        mouse: Res<Input<MouseButton>>,
+        mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
+        cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
+    ) {
+
+    let direction = camera_direction(&cam_q, keys);
     
+    let cam = cam_q.single();
+
+    let movement = direction;//.normalize_or_zero();
+
     let (mut player_transform, mut vel) = velocities.single_mut();
 
-    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= -0.9{
+    if mouse.just_pressed(MouseButton::Right) && player_transform.translation.y <= -0.9{
         vel.linvel.y = 3.5;
     }
-
-   println!("player translation y is {}", player_transform.translation.y);
+    
+//    println!("player translation y is {}", player_transform.translation.y);
 
     if player_transform.translation.y <= -0.9 {
         vel.linvel.x = movement.x * 2.0;
