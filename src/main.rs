@@ -1,7 +1,5 @@
 use bevy::prelude::*;
-use bevy::render::camera;
 use bevy::render::mesh::shape::*;
-use bevy_rapier3d::na::Translation;
 use bevy_rapier3d::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_third_person_camera::*;
@@ -142,7 +140,6 @@ fn setup_physics(
 }
 
 pub fn shoot(
-    keys: Res<Input<KeyCode>>,
     positions: Query<&Transform, With<Player>>,
     cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
     mut commands: Commands,
@@ -154,16 +151,14 @@ pub fn shoot(
     let cam = cam_q.single();
 
     let position = positions.single();
-//    for position in positions.iter() {
-
-    let direction = camera_direction(&cam_q, keys);
-    
-//    println!("direction is {}", direction);
 
     if mouse.just_pressed(MouseButton::Left) {
+        let bullet_position = cam.rotation.mul_vec3(Vec3::new(
+            0.0,
+            0.0,
+            -2.0
+        ));
 
-
-//    if keyboard.just_pressed(KeyCode::H) {
         commands
             .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Capsule {
@@ -174,17 +169,18 @@ pub fn shoot(
             .insert(RigidBody::Dynamic)
             .insert(Collider::ball(0.5))
             .insert(Restitution::coefficient(0.7))
-            .insert(TransformBundle::from(Transform::from_xyz(position.translation.x + 1.0,
-             position.translation.y + 1.0, position.translation.z + 1.0)))
-//            .insert(TransformBundle::from(Transform::from_rotation(cam.rotation)))//.with_translation(position.translation)))
+//            .insert(TransformBundle::from(Transform::from_xyz(position.translation.x,
+//            position.translation.y + 2.0, position.translation.z)
+            .insert(TransformBundle::from(Transform::from_xyz(
+                position.translation.x + bullet_position.x,
+                position.translation.y + bullet_position.y,
+                position.translation.z + bullet_position.z
+                )))
             .insert(Velocity {
-//                vel.linvel.x = direction.x * 2.0;
-//                vel.linvel.z = direction.z * 2.0;
-//                linvel: Vec3::new(cam.rotation.x * 10.0 , 0.0 , cam.rotation.z * 10.0),
                 linvel: cam.rotation.mul_vec3(Vec3::new(
-                    0.0,
-                    0.0,
-                    -4.0
+                    1.0,
+                    1.0,
+                    -20.0
                 )),
                 angvel: Vec3::new(0.0, 0.0, 0.0),
             })
