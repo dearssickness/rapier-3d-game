@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 use bevy::render::mesh::shape::*;
+//use bevy_inspector_egui::egui::Grid;
 use bevy_rapier3d::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_third_person_camera::*;
+use bevy_debug_grid::*;
 
 fn main() {
     App::new()
@@ -11,6 +13,7 @@ fn main() {
         .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(ThirdPersonCameraPlugin)
+        .add_plugins(DebugGridPlugin::with_floor_grid(),)
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, setup_physics)
         .add_systems(Update, player_movement)
@@ -61,14 +64,18 @@ fn setup_physics(
 ) {
     /* Create the ground. */
     commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane {size: 100.0, subdivisions: 0})),
-            material: materials.add(Color::hex("006B6E").unwrap().into()),
-            ..default()
-        })
+//        .spawn(
+//            PbrBundle {
+//            mesh: meshes.add(Mesh::from(shape::Plane {size: 100.0, subdivisions: 0})),
+//            material: materials.add(Color::hex("006B6E").unwrap().into()),
+//            ..default()
+//        })
+        .spawn(
+        Grid::default()
+        )
         .insert(Collider::cuboid(100.0, 0.1, 100.0))
         .insert(Ground)
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.0, 0.0)));
 
     // Create light    
     commands
@@ -140,7 +147,7 @@ fn setup_physics(
 }
 
 pub fn shoot(
-    positions: Query<&Transform, With<Player>>,
+    mut player_transforms: Query<(&mut Transform, &mut Velocity), With<Player>>,
     cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -150,15 +157,29 @@ pub fn shoot(
     
     let cam = cam_q.single();
 
-    let position = positions.single();
+    let (player_transform, mut player_velocity) = player_transforms.single_mut();
 
     if mouse.just_pressed(MouseButton::Left) {
-        let bullet_position = cam.rotation.mul_vec3(Vec3::new(
-            0.0,
-            0.0,
-            -2.0
+        let bullet_vector = cam.rotation.mul_vec3(
+            Vec3::new(
+                0.0,
+                0.5,
+                -1.0
         ));
 
+        let player_backfire_vector = cam.rotation.mul_vec3(
+            Vec3::new(
+                0.0,
+                0.0,
+                10.0                
+            ) 
+        );
+        
+        if player_transform.translation.y <= 2.0 {
+            player_velocity.linvel.x += player_backfire_vector.x;
+            player_velocity.linvel.y += player_backfire_vector.y;
+            player_velocity.linvel.z += player_backfire_vector.z;
+        }
         commands
             .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Capsule {
@@ -172,18 +193,20 @@ pub fn shoot(
 //            .insert(TransformBundle::from(Transform::from_xyz(position.translation.x,
 //            position.translation.y + 2.0, position.translation.z)
             .insert(TransformBundle::from(Transform::from_xyz(
-                position.translation.x + bullet_position.x,
-                position.translation.y + bullet_position.y,
-                position.translation.z + bullet_position.z
+                player_transform.translation.x + bullet_vector.x,
+                player_transform.translation.y + bullet_vector.y,
+                player_transform.translation.z + bullet_vector.z
                 )))
             .insert(Velocity {
                 linvel: cam.rotation.mul_vec3(Vec3::new(
                     1.0,
                     1.0,
-                    -20.0
+                    -40.0
                 )),
                 angvel: Vec3::new(0.0, 0.0, 0.0),
             })
+            .insert(Dominance::group(10))
+            .insert(ColliderMassProperties::Density(20.0))
             .insert(GravityScale(0.0))
             .insert(Bullet)
             .insert(Name::new("Bullet"));
@@ -240,19 +263,19 @@ pub fn camera_direction(
 
     let (mut player_transform, mut vel) = velocities.single_mut();
 
-    if mouse.just_pressed(MouseButton::Right) && player_transform.translation.y <= -0.9{
+    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= 1.1{
         vel.linvel.y = 3.5;
     }
     
-//    println!("player translation y is {}", player_transform.translation.y);
+    println!("player translation y is {}", player_transform.translation.y);
 
-    if player_transform.translation.y <= -0.9 {
-        vel.linvel.x = movement.x * 2.0;
-        vel.linvel.z = movement.z * 2.0;
+    if player_transform.translation.y <= 1.1 {
+        vel.linvel.x = movement.x * 4.0;
+        vel.linvel.z = movement.z * 4.0;
 
     } else {
-        vel.linvel.x = movement.x * 6.0;
-        vel.linvel.z = movement.z * 6.0;
+        vel.linvel.x = movement.x * 8.0;
+        vel.linvel.z = movement.z * 8.0;
 
     }
 
