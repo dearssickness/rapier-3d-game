@@ -1,49 +1,51 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy::render::mesh::shape::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_third_person_camera::*;
 
-//fn spawn_player(
-//    
-//    mut commands: Commands,
-//    mut meshes: ResMut<Assets<Mesh>>,
-//    mut materials: ResMut<Assets<StandardMaterial>>
-//
-//){
-//    commands
-//    .spawn((PbrBundle {
-//        mesh: meshes.add(Mesh::from(shape::Capsule {
-//        radius: 0.5, rings: 0, depth: 1.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
-//        material: materials.add(Color::rgb(1.3, 0.5, 1.3).into()),
-//        ..default()
-//    },
-//    ThirdPersonCameraTarget))
-//    .insert(RigidBody::Dynamic)
-//    .insert(Collider::capsule_y (0.5, 0.5))
-//    .insert(Restitution::coefficient(0.7))
-//    .insert(Friction {
-//        coefficient: 0.1,
-//        combine_rule: CoefficientCombineRule::Min,
-//    })
-//    .insert(ExternalForce {
-//        force: Vec3::new(0.0, 0.0, 0.0),
-//        torque: Vec3::new(0.0, 0.0, 0.0),
-//    })
-//    .insert(TransformBundle::from(Transform::from_xyz(-3.0, 1.0, 0.0)))
-//    .insert(Player)
-//    .insert(Speed(2.5))
-//    .insert(ExternalImpulse {
-//        impulse: Vec3::new(0.0, 0.0, 0.0),
-//        torque_impulse: Vec3::new(0.0, 0.0, 0.0),
-//    })
-//    .insert(Velocity {
-//        linvel: Vec3::new(0.0, 0.0, 0.0),
-//        angvel: Vec3::new(0.0, 0.0, 0.0),
-//    })
-//    .insert(Name::new("Player"));
-//}
+use crate::{Speed, Player};
 
-fn player_movement(
+pub fn spawn_player(
+   
+   mut commands: Commands,
+   mut meshes: ResMut<Assets<Mesh>>,
+   mut materials: ResMut<Assets<StandardMaterial>>
+
+){
+   commands
+   .spawn((PbrBundle {
+       mesh: meshes.add(Mesh::from(shape::Capsule {
+       radius: 0.5, rings: 0, depth: 1.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
+       material: materials.add(Color::rgb(1.3, 0.5, 1.3).into()),
+       ..default()
+   },
+   ThirdPersonCameraTarget))
+   .insert(RigidBody::Dynamic)
+   .insert(Collider::capsule_y (0.5, 0.5))
+   .insert(Restitution::coefficient(0.7))
+   .insert(Friction {
+       coefficient: 0.1,
+       combine_rule: CoefficientCombineRule::Min,
+   })
+   .insert(ExternalForce {
+       force: Vec3::new(0.0, 0.0, 0.0),
+       torque: Vec3::new(0.0, 0.0, 0.0),
+   })
+   .insert(TransformBundle::from(Transform::from_xyz(-3.0, 1.0, 0.0)))
+   .insert(Player)
+   .insert(Speed(2.5))
+   .insert(ExternalImpulse {
+       impulse: Vec3::new(0.0, 0.0, 0.0),
+       torque_impulse: Vec3::new(0.0, 0.0, 0.0),
+   })
+   .insert(Velocity {
+       linvel: Vec3::new(0.0, 0.0, 0.0),
+       angvel: Vec3::new(0.0, 0.0, 0.0),
+   })
+   .insert(Name::new("Player"));
+}
+
+pub fn player_movement(
     keys: Res<Input<KeyCode>>,
     mouse: Res<Input<MouseButton>>,
     mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,

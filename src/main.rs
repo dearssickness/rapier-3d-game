@@ -20,6 +20,7 @@ fn main() {
         .add_plugins(DebugGridPlugin::with_floor_grid(),)
         .add_systems(Startup, setup_graphics)
         .add_systems(Startup, setup_physics)
+        .add_systems(Startup, spawn_player)
         .add_systems(Update, player_movement)
         .add_systems(Update, shoot)
         .run();
