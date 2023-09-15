@@ -3,7 +3,10 @@ use bevy_rapier3d::prelude::*;
 use bevy::render::mesh::shape::*;
 use bevy_third_person_camera::*;
 
-use crate::{Speed, Player};
+use crate::Speed;
+
+#[derive(Component)]
+pub struct Player;
 
 pub fn spawn_player(
    
