@@ -7,8 +7,10 @@ use bevy_third_person_camera::*;
 use bevy_debug_grid::*;
 
 mod player;
+mod camera;
 
 pub use player::*;
+pub use camera::*;
 
 fn main() {
     App::new()
@@ -18,7 +20,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(ThirdPersonCameraPlugin)
         .add_plugins(DebugGridPlugin::with_floor_grid(),)
-        .add_systems(Startup, setup_graphics)
+        .add_systems(Startup, setup_camera)
         .add_systems(Startup, setup_physics)
         .add_systems(Startup, spawn_player)
         .add_systems(Update, player_movement)
@@ -48,17 +50,17 @@ pub struct Light;
 struct Speed(f32);
 
 
-fn setup_graphics(mut commands: Commands) {
-    commands.spawn((
-        ThirdPersonCamera {
-           zoom: Zoom::new(5.0, 10.0),
-        ..default()
-        },
-        Camera3dBundle::default()
-    ))
-    .insert(Camera)
-    .insert(Name::new("Camera"));
-}
+//fn setup_graphics(mut commands: Commands) {
+//    commands.spawn((
+//        ThirdPersonCamera {
+//           zoom: Zoom::new(5.0, 10.0),
+//        ..default()
+//        },
+//        Camera3dBundle::default()
+//    ))
+//    .insert(Camera)
+//    .insert(Name::new("Camera"));
+//}
 
 
 fn setup_physics(
@@ -114,40 +116,6 @@ fn setup_physics(
         })
         .insert(Ball)
         .insert(Name::new("Ball"));
-
-    /* Meant to be the player */
-//    commands
-//        .spawn((PbrBundle {
-//            mesh: meshes.add(Mesh::from(shape::Capsule {
-//            radius: 0.5, rings: 0, depth: 1.0, latitudes: 16, longitudes:32, uv_profile: CapsuleUvProfile::Aspect })),
-//            material: materials.add(Color::rgb(1.3, 0.5, 1.3).into()),
-//            ..default()
-//        },
-//        ThirdPersonCameraTarget))
-//        .insert(RigidBody::Dynamic)
-//        .insert(Collider::capsule_y (0.5, 0.5))
-//        .insert(Restitution::coefficient(0.7))
-//        .insert(Friction {
-//            coefficient: 0.1,
-//            combine_rule: CoefficientCombineRule::Min,
-//        })
-//        .insert(ExternalForce {
-//            force: Vec3::new(0.0, 0.0, 0.0),
-//            torque: Vec3::new(0.0, 0.0, 0.0),
-//        })
-//        .insert(TransformBundle::from(Transform::from_xyz(-3.0, 1.0, 0.0)))
-//        .insert(Player)
-//        .insert(Speed(2.5))
-//        .insert(ExternalImpulse {
-//            impulse: Vec3::new(0.0, 0.0, 0.0),
-//            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
-//        })
-//        .insert(Velocity {
-//            linvel: Vec3::new(0.0, 0.0, 0.0),
-//            angvel: Vec3::new(0.0, 0.0, 0.0),
-//        })
-//        .insert(Name::new("Player"));
-
 }
 
 pub fn shoot(

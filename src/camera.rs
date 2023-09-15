@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_third_person_camera::*;
 
+use crate::Camera;
+
 pub fn setup_camera(mut commands: Commands) {
     commands.spawn((
         ThirdPersonCamera {
