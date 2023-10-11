@@ -2,8 +2,11 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy::render::mesh::shape::*;
 use bevy_third_person_camera::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::Speed;
+
+static COLLISION_FLAG: AtomicBool = AtomicBool::new(true);
 
 #[derive(Component)]
 pub struct Player;
@@ -45,17 +48,16 @@ pub fn spawn_player(
        linvel: Vec3::new(0.0, 0.0, 0.0),
        angvel: Vec3::new(0.0, 0.0, 0.0),
    })
+   .insert(ActiveEvents::COLLISION_EVENTS)
    .insert(Name::new("Player"));
 }
 
-pub fn player_movement(
+pub fn direction_sync(
     keys: Res<Input<KeyCode>>,
-    mouse: Res<Input<MouseButton>>,
-    mut velocities: Query<(&mut Transform, &mut Velocity), With<Player>>,
-    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
-) {
-
-   let cam = cam_q.single();
+    cam_q: &Query<&Transform, (With<Camera>, Without<Player>)>,
+) -> Vec3 {
+    
+    let cam = cam_q.single();
     
     let mut direction = Vec3::ZERO;
     
@@ -80,27 +82,67 @@ pub fn player_movement(
     }
     
     direction.y = 0.0;
+    
+    direction
+}
 
-    let movement = direction;//.normalize_or_zero();
+pub fn player_movement(
+    keys: Res<Input<KeyCode>>,
+    mouse: Res<Input<MouseButton>>,
+    cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
+    mut player_query: Query<(&mut Transform, &mut Velocity), With<Player>>,
+    mut collision_events: EventReader<CollisionEvent>,
 
-    let (mut player_transform, mut vel) = velocities.single_mut();
+){
+    let cam = cam_q.single();
+    
+    let movement = direction_sync(
+        keys, &cam_q
+    );
 
+    let (mut player_transform, mut player_velocity) = player_query.single_mut();
+    
     if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= 1.1{
-        vel.linvel.y = 3.5;
+        player_velocity.linvel.y = 3.5;
     }
     
-    println!("player translation y is {}", player_transform.translation.y);
+//    println!("player translation y is {}", player_transform.translation.y);
 
-    if player_transform.translation.y <= 1.1 {
-        vel.linvel.x = movement.x * 4.0;
-        vel.linvel.z = movement.z * 4.0;
-
-    } else {
-        vel.linvel.x = movement.x * 8.0;
-        vel.linvel.z = movement.z * 8.0;
-
+    for collision in collision_events.iter(){
+        println!("event {:?}", collision);
+        match collision {
+            CollisionEvent::Stopped(_, _, _) => {
+                set_collisions(false);
+            },
+            _ =>{
+                set_collisions(true);
+            }
+        }    
     }
-
+    
+    let collision_flag = COLLISION_FLAG.load(Ordering::Relaxed);
+    
+    if collision_flag == true{
+        player_velocity.linvel.x = movement.x * 4.0;
+        player_velocity.linvel.z = movement.z * 4.0;
+    }else{
+        player_velocity.linvel.x = movement.x * 8.0;
+        player_velocity.linvel.z = movement.z * 8.0;
+    }
+    
     player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
+
+}
+
+
+/* Not in the App builder */
+pub fn set_collisions(
+    collision_stat: bool
+){
     
+    if collision_stat == true{
+        COLLISION_FLAG.store(true ,Ordering::Relaxed)
+    }else{
+        COLLISION_FLAG.store(false ,Ordering::Relaxed)
+    }
 }
