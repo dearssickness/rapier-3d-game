@@ -25,7 +25,7 @@ pub fn shoot(
             Vec3::new(
                 0.0,
                 0.5,
-                -1.0
+                -2.0
         ));
 
         let player_backfire_vector = cam.rotation.mul_vec3(

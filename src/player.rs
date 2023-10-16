@@ -30,7 +30,7 @@ pub fn spawn_player(
    .insert(Collider::capsule_y (0.5, 0.5))
    .insert(Restitution::coefficient(0.7))
    .insert(Friction {
-       coefficient: 0.1,
+       coefficient: 0.0,
        combine_rule: CoefficientCombineRule::Min,
    })
    .insert(ExternalForce {
@@ -53,7 +53,7 @@ pub fn spawn_player(
 }
 
 pub fn direction_sync(
-    keys: Res<Input<KeyCode>>,
+    keys: &Res<Input<KeyCode>>,
     cam_q: &Query<&Transform, (With<Camera>, Without<Player>)>,
 ) -> Vec3 {
     
@@ -97,19 +97,15 @@ pub fn player_movement(
     let cam = cam_q.single();
     
     let movement = direction_sync(
-        keys, &cam_q
+        &keys, &cam_q
     );
-
-    let (mut player_transform, mut player_velocity) = player_query.single_mut();
     
-    if mouse.pressed(MouseButton::Right) && player_transform.translation.y <= 1.1{
-        player_velocity.linvel.y = 3.5;
-    }
+    let (mut player_transform, mut player_velocity) = player_query.single_mut();
     
 //    println!("player translation y is {}", player_transform.translation.y);
 
     for collision in collision_events.iter(){
-        println!("event {:?}", collision);
+//        println!("event {:?}", collision);
         match collision {
             CollisionEvent::Stopped(_, _, _) => {
                 set_collisions(false);
@@ -123,11 +119,27 @@ pub fn player_movement(
     let collision_flag = COLLISION_FLAG.load(Ordering::Relaxed);
     
     if collision_flag == true{
-        player_velocity.linvel.x = movement.x * 4.0;
-        player_velocity.linvel.z = movement.z * 4.0;
+        if (keys.pressed(KeyCode::W) || keys.pressed(KeyCode::S))
+        && (keys.pressed(KeyCode::A) || keys.pressed(KeyCode::D)){
+            player_velocity.linvel.x = movement.x * 3.0;
+            player_velocity.linvel.z = movement.z * 3.0;
+        }else{
+            player_velocity.linvel.x = movement.x * 4.0;
+            player_velocity.linvel.z = movement.z * 4.0;
+        }
+
+        if mouse.pressed(MouseButton::Right){
+            player_velocity.linvel.y = 3.5;
+        }
     }else{
-        player_velocity.linvel.x = movement.x * 8.0;
-        player_velocity.linvel.z = movement.z * 8.0;
+        if (keys.pressed(KeyCode::W) || keys.pressed(KeyCode::S))
+        && (keys.pressed(KeyCode::A) || keys.pressed(KeyCode::D)){
+            player_velocity.linvel.x = movement.x * 6.0;
+            player_velocity.linvel.z = movement.z * 6.0;
+        }else{
+            player_velocity.linvel.x = movement.x * 8.0;
+            player_velocity.linvel.z = movement.z * 8.0;
+        }
     }
     
     player_transform.rotation = Quat::from_xyzw(0.0, cam.rotation.y, 0.0, cam.rotation.w);
@@ -135,11 +147,10 @@ pub fn player_movement(
 }
 
 
-/* Not in the App builder */
+/* Not a Bevy system */
 pub fn set_collisions(
     collision_stat: bool
 ){
-    
     if collision_stat == true{
         COLLISION_FLAG.store(true ,Ordering::Relaxed)
     }else{

@@ -65,4 +65,13 @@ pub fn setup_map(
         })
         .insert(Ball)
         .insert(Name::new("Ball"));
+        
+    commands
+        .spawn(RigidBody::Fixed)
+        .insert(Collider::cuboid(1.5, 0.3, 1.5))
+        .insert(PbrBundle{
+            mesh: meshes.add(Mesh::from(shape::Box {min_x: -1.5, max_x:1.5, min_y:-0.3, max_y:0.3, min_z:-1.5, max_z:1.5} )),
+            ..default()
+        })
+        .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.3, 4.0)));
 }
