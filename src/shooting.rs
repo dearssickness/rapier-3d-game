@@ -70,6 +70,31 @@ pub fn shoot(
             .insert(ColliderMassProperties::Density(20.0))
             .insert(GravityScale(0.0))
             .insert(Bullet)
+            .insert(ActiveEvents::COLLISION_EVENTS)
             .insert(Name::new("Bullet"));
+    }
+}
+
+pub fn despawn_bullet(
+    mut collision_events: EventReader<CollisionEvent>,
+    bullets_query: Query<Entity, With<Bullet>>, 
+    mut commands: Commands
+){
+    for collision in collision_events.iter(){
+        for bullet in bullets_query.iter(){
+//            println!("collision event is {:?} and entity is {:?}", collision, entity);
+            match collision {
+                &CollisionEvent::Started(h1, h2, _) => {
+//                    println!("collision is = {:?}", collision);
+//                    println!("h1 is {:?}", h1);
+//                    println!("Entity is {:?}", entity);
+                    if h1 == bullet || h2 == bullet {
+                        commands.entity(bullet).despawn();
+                }
+                },
+                _ => {
+                }
+            }
+        }
     }
 }

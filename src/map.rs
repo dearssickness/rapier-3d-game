@@ -12,6 +12,10 @@ pub struct Ball;
 #[derive(Component)]
 pub struct Light;
 
+
+#[derive(Component)]
+pub struct BlockAge;
+
 pub fn setup_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -68,10 +72,11 @@ pub fn setup_map(
         
     commands
         .spawn(RigidBody::Fixed)
-        .insert(Collider::cuboid(1.5, 0.3, 1.5))
+        .insert(Collider::cuboid(1.5, 1.6, 1.5))
         .insert(PbrBundle{
-            mesh: meshes.add(Mesh::from(shape::Box {min_x: -1.5, max_x:1.5, min_y:-0.3, max_y:0.3, min_z:-1.5, max_z:1.5} )),
+            mesh: meshes.add(Mesh::from(shape::Box {min_x: -1.5, max_x:1.5, min_y:-1.6, max_y:1.6, min_z:-1.5, max_z:1.5} )),
             ..default()
         })
-        .insert(TransformBundle::from(Transform::from_xyz(4.0, 0.3, 4.0)));
+        .insert(BlockAge)
+        .insert(TransformBundle::from(Transform::from_xyz(4.0, 1.6, 4.0)));
 }

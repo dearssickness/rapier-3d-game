@@ -28,6 +28,7 @@ fn main() {
         .add_systems(Startup, spawn_player)
         .add_systems(Update, player_movement)
         .add_systems(Update, shoot)
+        .add_systems(Update, despawn_bullet)
         .run();
 }
 

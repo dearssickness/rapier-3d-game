@@ -90,7 +90,7 @@ pub fn player_movement(
     keys: Res<Input<KeyCode>>,
     mouse: Res<Input<MouseButton>>,
     cam_q: Query<&Transform, (With<Camera>, Without<Player>)>,
-    mut player_query: Query<(&mut Transform, &mut Velocity), With<Player>>,
+    mut player_query: Query<(Entity, &mut Transform, &mut Velocity), With<Player>>,
     mut collision_events: EventReader<CollisionEvent>,
 
 ){
@@ -100,21 +100,24 @@ pub fn player_movement(
         &keys, &cam_q
     );
     
-    let (mut player_transform, mut player_velocity) = player_query.single_mut();
+    let (player_entity, mut player_transform, mut player_velocity) = player_query.single_mut();
     
 //    println!("player translation y is {}", player_transform.translation.y);
 
     for collision in collision_events.iter(){
-//        println!("event {:?}", collision);
+        println!("event {:?}", collision);
         match collision {
-            CollisionEvent::Stopped(_, _, _) => {
-                set_collisions(false);
+            &CollisionEvent::Stopped(h1, h2, _) => {
+                if h1 == player_entity || h2 == player_entity{
+                    set_collisions(false);
+                }
             },
-            _ =>{
-                set_collisions(true);
+            &CollisionEvent::Started(h1, h2 , _) => {
+                if h1 == player_entity || h2 == player_entity{
+                    set_collisions(true)}
+            }
             }
         }    
-    }
     
     let collision_flag = COLLISION_FLAG.load(Ordering::Relaxed);
     
